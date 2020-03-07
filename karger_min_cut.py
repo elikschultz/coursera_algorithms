@@ -24,8 +24,8 @@ for vertex in graph:
 crossing_edges = 200*199/2
 
 t1 = time.time()
-# Run algorithm 40000 times
-for i in range(40000):
+# Run algorithm 100000 times
+for i in range(100000):
     graph_dict_copy = copy.deepcopy(graph_dict)
     while len(graph_dict_copy.keys()) > 2: 
         # Choose two nodes to combine at random
@@ -34,29 +34,24 @@ for i in range(40000):
                                         size = 1)[0]
         
         # Add new key to adjacency list representing merged node and get adjacent nodes/counts of 
-        # connecting edges
+        # connecting edges; remove old nodes that are now merged; update nodes that
+        # were not involved in the merge to reflect the merge
         new_node = to_combine_0 + ", " + to_combine_1
-        graph_dict_copy[new_node] = graph_dict_copy[to_combine_0]
-        try:
-            del graph_dict_copy[new_node][to_combine_1]
-        except KeyError:
-            pass
+        graph_dict_copy[new_node] = {}
+        
+        for adj_node in graph_dict_copy[to_combine_0].keys():
+            if adj_node != to_combine_1:
+                graph_dict_copy[new_node][adj_node] = graph_dict_copy[to_combine_0][adj_node]
+                graph_dict_copy[adj_node][new_node] = graph_dict_copy[adj_node][to_combine_0]
+            del graph_dict_copy[adj_node][to_combine_0]
         
         for adj_node in graph_dict_copy[to_combine_1].keys():
             if adj_node != to_combine_0:
                 graph_dict_copy[new_node][adj_node] = graph_dict_copy[new_node].get(adj_node, 0) + \
                     graph_dict_copy[to_combine_1][adj_node]
-    
-        # Replace all references to the two nodes that were merged with references to the new node
-        for node in graph_dict_copy.keys():
-            if to_combine_0 in graph_dict_copy[node].keys():
-                graph_dict_copy[node][new_node] = graph_dict_copy[node][to_combine_0]
-                del graph_dict_copy[node][to_combine_0]
-                
-            if to_combine_1 in graph_dict_copy[node].keys():
-                graph_dict_copy[node][new_node] = graph_dict_copy[node].get(new_node, 0) + \
-                    graph_dict_copy[node][to_combine_1]
-                del graph_dict_copy[node][to_combine_1]
+                graph_dict_copy[adj_node][new_node] = graph_dict_copy[adj_node].get(new_node, 0) + \
+                    graph_dict_copy[adj_node][to_combine_1]
+            del graph_dict_copy[adj_node][to_combine_1]
                 
         del graph_dict_copy[to_combine_0]
         del graph_dict_copy[to_combine_1]
