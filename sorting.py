@@ -72,32 +72,57 @@ def merge(x_1, x_2):
         
     return(result)
     
-def quick_sort(x):
+def quick_sort(x, pivot_method = "middle"):
     if len(x) <= 1:
-        return(x)
+        return(x, 0)
+        
     else:
-        # Make sure pivot is in correct position
-        pivot = x[len(x)//2]
-        x[0], x[len(x)//2] = x[len(x)//2], x[0]
-        j = 0 # Every entry with index <= j should be <= pivot 
-        for i in range(1, len(x)):
-            if x[i] < pivot:
-                x[j + 1], x[i] = x[i], x[j + 1]
-                j += 1
-        x[0], x[j] = x[j], x[0]
-        
-        # Perform recursive calls
-        x_1 = quick_sort(x[:j])
-        if (j < len(x)):
-            x_2 = quick_sort(x[(j + 1):])
-        else:
-            x_2 = []
-        return(x_1 + [x[j]] + x_2)
-
+        if pivot_method == "middle":
+            pivot = x[len(x)//2]
+            pivot_loc = len(x)//2
             
+        elif pivot_method == "first":
+            pivot = x[0]
+            pivot_loc = 0
             
-        
+        elif pivot_method == "last":
+            pivot = x[-1]
+            pivot_loc = len(x) - 1
+            
+        elif pivot_method == "median_three":
+            if len(x) % 2 == 0:
+                median_three = {x[0]: 0,
+                                x[-1]: len(x) - 1,
+                                x[int(len(x)/2) - 1]: len(x)/2 - 1}
+                pivot = insertion_sort([x[0], x[-1], x[int(len(x)/2) - 1]])[1]
+                pivot_loc = int(median_three[pivot])
+            else:
+                median_three = {x[0]: 0,
+                                x[-1]: len(x) - 1,
+                                x[int((len(x) - 1)/2)]: (len(x) - 1)/2}
+                pivot = insertion_sort([x[0], x[-1], x[int((len(x) - 1)/2)]])[1]
+                pivot_loc = int(median_three[pivot])
     
+        x[0], x[pivot_loc] = x[pivot_loc], x[0]
+        i = 1
+        for j in range(1, len(x)):
+            if x[j] < pivot:
+                x[i], x[j] = (x[j], x[i]) 
+                i += 1
                 
+        x[i - 1], x[0] = x[0], x[i - 1]
+        # Perform recursive calls
+        x_1, c_1 = quick_sort(x[:(i - 1)], pivot_method)
+        if (j < len(x)):
+            x_2, c_2 = quick_sort(x[i:], pivot_method)
+        else:
+            x_2, c_2 = ([], 0)
+        return(x_1 + [x[i-1]] + x_2, c_1 + len(x) - 1 + c_2)
         
-    
+with open('QuickSort.txt', 'r') as f:
+    test_array = [int(x) for x in f.read().split('\n')[:-1]]
+
+print(quick_sort(test_array.copy(), 'first')[1])
+print(quick_sort(test_array.copy(), 'last')[1])
+print(quick_sort(test_array.copy(), 'median_three')[1])
+
