@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import copy
-import time
 
 # Read in file
 with open('kargerMinCut.txt', 'r') as f:
@@ -10,55 +8,48 @@ with open('kargerMinCut.txt', 'r') as f:
 
 graph = graph.split('\n')[:-1]
 
-# Represent adjacency list as dictionary of nodes, where each entry consists of another
-# dictionary with keys corresponding to adjacent nodes and values corresponding to 
-# number of edges connecting the two
+# Represent adjacency list as dictionary and create list of edges
 graph_dict = {}
+edges = []
 for vertex in graph:
     vertex = vertex.split('\t')[:-1]
-    graph_dict[vertex[0]] = {}
-    for connected_vertex in vertex[1:]:
-        graph_dict[vertex[0]][connected_vertex] = 1
-
+    graph_dict[vertex[0]] = vertex[1:]
+    edges_to_add = ((x, y) for x in [vertex[0]] for y in vertex[1:])
+    for edge in edges_to_add:
+        if [edge[0] < edge[1]]:
+            edges.append(edge)
+    
 # Create list to track number of crossing edges for each pass of algorithm
 crossing_edges = 200*199/2
 
-t1 = time.time()
-# Run algorithm 100000 times
 for i in range(100000):
-    graph_dict_copy = copy.deepcopy(graph_dict)
-    while len(graph_dict_copy.keys()) > 2: 
-        # Choose two nodes to combine at random
-        to_combine_0 = np.random.choice(list(graph_dict_copy.keys()), size = 1)[0]
-        to_combine_1 = np.random.choice(list(graph_dict_copy[to_combine_0].keys()), 
-                                        size = 1)[0]
-        
-        # Add new key to adjacency list representing merged node and get adjacent nodes/counts of 
-        # connecting edges; remove old nodes that are now merged; update nodes that
-        # were not involved in the merge to reflect the merge
-        new_node = to_combine_0 + ", " + to_combine_1
-        graph_dict_copy[new_node] = {}
-        
-        for adj_node in graph_dict_copy[to_combine_0].keys():
-            if adj_node != to_combine_1:
-                graph_dict_copy[new_node][adj_node] = graph_dict_copy[to_combine_0][adj_node]
-                graph_dict_copy[adj_node][new_node] = graph_dict_copy[adj_node][to_combine_0]
-            del graph_dict_copy[adj_node][to_combine_0]
-        
-        for adj_node in graph_dict_copy[to_combine_1].keys():
-            if adj_node != to_combine_0:
-                graph_dict_copy[new_node][adj_node] = graph_dict_copy[new_node].get(adj_node, 0) + \
-                    graph_dict_copy[to_combine_1][adj_node]
-                graph_dict_copy[adj_node][new_node] = graph_dict_copy[adj_node].get(new_node, 0) + \
-                    graph_dict_copy[adj_node][to_combine_1]
-            del graph_dict_copy[adj_node][to_combine_1]
+    np.random.shuffle(edges)
+    nodes = set()
+    node_dict = dict(zip([str(x) for x in range(1, 201)], [set([str(x)]) for x in range(1, 201)]))
+    for edge in edges:
+        if len(node_dict[edge[0]].union(node_dict[edge[1]])) == 200:
+            if len(node_dict[edge[0]]) > len(node_dict[edge[1]]):
+                crossing_edges_new = 0
+                for i in list(node_dict[edge[1]]):
+                    crossing_edges_new += len(set(graph_dict[i]).difference(node_dict[edge[1]]))
                 
-        del graph_dict_copy[to_combine_0]
-        del graph_dict_copy[to_combine_1]
-        
-        final_node_1 = new_node
-        final_node_2 = list(graph_dict_copy[new_node].keys())[0]
+                if crossing_edges > crossing_edges_new:
+                    crossing_edges = crossing_edges_new
+                    
+            else:
+                crossing_edges_new = 0
+                for i in list(node_dict[edge[0]]):
+                    crossing_edges_new += len(set(graph_dict[i]).difference(node_dict[edge[0]]))
+                
+                if crossing_edges > crossing_edges_new:
+                    crossing_edges = crossing_edges_new
 
-    if graph_dict_copy[final_node_1][final_node_2] < crossing_edges:
-        crossing_edges = graph_dict_copy[final_node_1][final_node_2]
-print(time.time() - t1)
+            break
+        elif node_dict[edge[0]] == node_dict[edge[1]]:
+            continue
+        else:
+            node_dict[edge[0]].update(node_dict[edge[1]])
+            for i in node_dict[edge[1]]:
+                node_dict[i] = node_dict[edge[0]]
+            node_dict[edge[1]] = node_dict[edge[0]]   
+print(crossing_edges)
